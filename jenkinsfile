@@ -1,0 +1,66 @@
+properties([
+    parameters([
+        choice(
+            name: 'Terraform_Action',
+            choices: ['plan','apply','state list','destroy']
+        )
+    ])
+])
+
+pipeline {
+    agent any
+    environment  {
+        //Azure Credentials 
+        SUBSCRIPTION_ID = credentials('Subscription_ID')
+        CLIENT_ID= credentials('Client_ID')
+        CLIENT_SECRET= credentials('Client_Secret')
+        TENANT_ID= credentials('Tenant_ID')
+    }
+    stages {
+        stage('Azure-cli installation check & authentication'){
+            steps{ 
+                sh 'az version' // Note: No need to run az login as you're using a service principal
+                sh 'az login --service-principal --username ${CLIENT_ID} --password ${CLIENT_SECRET} --tenant ${TENANT_ID}'
+                sh 'az account set --subscription ${SUBSCRIPTION_ID}'
+                sh 'az account show'
+            }
+        }
+        stage('Terraform installation'){
+            steps{
+                sh 'terraform --version'
+            }
+        }
+        stage('Git Pulling') {
+            steps {
+                git branch: 'main', url: 'https://github.com/rjnimbalkar99/Azure-cloud-infrastructure-provisioning-with-path-based-routing-using-terraform.'
+            }
+        }
+        stage('Init') {
+            steps {
+                    sh 'terraform init -upgrade'
+            }
+        }
+        stage('Validate') {
+            steps {
+                sh 'terraform validate'
+            }
+        }
+        stage('Terraform_Action') {
+            steps {
+                    script {   
+                        if (params.Terraform_Action == 'plan') {
+                            sh "terraform plan -var-file=variables1.tfvars"
+                        }   else if (params.Terraform_Action == 'apply') {
+                            sh "terraform apply -var-file=variables1.tfvars -auto-approve"
+                        }   else if (params.Terraform_Action == 'state list') {
+                            sh "terraform state list"
+                        }   else if (params.Terraform_Action == 'destroy') {
+                            sh "terraform destroy -var-file=variables1.tfvars -auto-approve"
+                        } else{
+                            error "Invalid value for Terraform_Action: ${params.Terraform_Action}"
+                        } 
+                    }
+                }
+            }
+        }
+    }
