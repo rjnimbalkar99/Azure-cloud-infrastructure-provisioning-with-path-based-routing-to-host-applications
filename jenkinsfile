@@ -32,7 +32,7 @@ pipeline {
         }
         stage('Git Pulling') {
             steps {
-                git branch: 'main', url: 'https://github.com/rjnimbalkar99/Azure-cloud-infrastructure-provisioning-with-path-based-routing-using-terraform.'
+                git branch: 'main', url: 'https://github.com/rjnimbalkar99/Azure-cloud-infrastructure-provisioning-with-path-based-routing-to-host-applications'
             }
         }
         stage('Init') {
